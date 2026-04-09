@@ -1,0 +1,8 @@
+# 의존성 패키지 목록
+openai
+anthropic
+google-generativeai
+aiomysql
+pandas
+python-dotenv
+asyncio
