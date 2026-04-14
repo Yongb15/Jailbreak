@@ -27,28 +27,47 @@ def load_dataset_to_db(file_path):
         # 3. 데이터 삽입 로직
         inserted_count = 0
         for _, row in df.iterrows():
-            # CSV 컬럼명과 DB 테이블 컬럼 매핑
-            category = str(row['출처'])
-            content = str(row['최종 테스트 프롬프트'])
+            # [수정] CSV 컬럼명에 맞춰 데이터 추출
+            # 출처가 NaN이면 'General'로 저장
+            category = str(row['출처']) if pd.notna(row['출처']) else 'General'
             
-            # 라벨 처리: CSV의 '라벨'이 1이면 True, 0이면 False (또는 숫자로 바로 저장)
-            is_malicious = 1 if row['라벨'] == 1 or str(row['라벨']).lower() == 'true' else 0
+            # 새롭게 추가된 컬럼들 매핑
+            original = str(row['원본 프롬프트'])
+            translated = str(row['기본 번역본']) if pd.notna(row['기본 번역본']) else ''
+            final = str(row['최종 테스트 프롬프트'])
+            
+            # [수정] 라벨 처리: CSV의 '라벨'이 '악성'이면 1, 아니면 0
+            is_malicious = 1 if row['라벨'] == '악성' else 0
 
-            sql = "INSERT INTO prompts (category, content, is_malicious) VALUES (%s, %s, %s)"
-            cursor.execute(sql, (category, content, is_malicious))
+            # [수정] SQL 문에 original_prompt와 translated_prompt 추가
+            sql = """
+            INSERT INTO prompts (id, category, original_prompt, translated_prompt, final_prompt, is_malicious) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """
+            
+            # '번호' 컬럼을 id로 사용 (PK 중복 방지를 위해 기존 데이터 삭제 후 실행 권장)
+            cursor.execute(sql, (
+                row['번호'], 
+                category, 
+                original, 
+                translated, 
+                final, 
+                is_malicious
+            ))
             inserted_count += 1
         
         conn.commit()
         conn.close()
-        print(f"\n✅ 성공: 총 {inserted_count}개의 데이터가 'prompts' 테이블에 저장되었습니다.")
+        print(f"\n✅ 성공: 총 {inserted_count}개의 데이터가 DB에 저장되었습니다.")
 
     except FileNotFoundError:
-        print(f"❌ 파일을 찾을 수 없습니다: {file_path}. data/raw/ 폴더에 파일이 있는지 확인하세요.")
+        print(f"❌ 파일을 찾을 수 없습니다: {file_path}. 위치를 확인하세요.")
     except KeyError as e:
         print(f"❌ 컬럼명 매칭 에러: CSV의 컬럼명을 확인하세요. {e}")
     except Exception as e:
         print(f"❌ 에러 발생: {e}")
 
 if __name__ == "__main__":
-    file_name = "data/raw/Jailbreak_dataset.csv"
+    # 파일 경로가 프로젝트 구조에 맞는지 확인 (이미지 상으론 src/database와 같은 라인에 있었음)
+    file_name = "Jailbreak_dataset.csv" 
     load_dataset_to_db(file_name)
