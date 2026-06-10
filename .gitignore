@@ -1,0 +1,25 @@
+# [Security]
+.env
+*.env
+.vscode/
+
+# [Python]
+__pycache__/
+*.py[cod]
+venv/
+.env/
+
+# [Data & Results]
+data/raw/
+results/logs/
+*.csv
+*.xlsx
+
+# [Database]
+# 실제 데이터가 담긴 sql 덤프는 제외하고 구조(schema.sql)만 올립니다.
+*.sql
+!schema.sql
+*.sqlite3
+
+# [OS]
+.DS_Store
